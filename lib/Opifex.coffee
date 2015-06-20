@@ -43,8 +43,8 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 		return if not message
 
 		# Raw mode. Try to dispatch to '*' with no examination or manipulation of message.
-		if process.env['FORCE_RAW_MESSAGES']
-			if $["*"]?
+		if process.env['FORCE_RAW_MESSAGES']?
+			if $.hasOwnProperty("*") and $["*"] instanceof Function
 				$["*"].apply $, [ message ]
 			else
 				console.log '[opifex] could not dispatch raw to "*"'
@@ -54,7 +54,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 			try
 				json = JSON.parse message.toString()
 			catch e
-				if $["*"]?
+				if $.hasOwnProperty("*") and $["*"] instanceof Function
 					$["*"].apply $, [ message ]
 				else
 					console.log '[opifex] could not dispatch binary to "*"'
@@ -67,24 +67,24 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				if json.length > 0 and $.hasOwnProperty(json[0]) and $[json[0]] instanceof Function
 					method = json.shift()
 					$[method].apply $, json
-				else if $["*"]?
+				else if $.hasOwnProperty("*") and $["*"] instanceof Function
 					$["*"].apply $, json
 				else
-					console.log '[opifex] could not dispatch #{json}'
+					console.log "[opifex] could not dispatch #{JSON.stringify json}"
 
 			# Not an array, so no method matching. Try to dispatch to '*'.
-			else if $["*"]?
+			else if $.hasOwnProperty("*") and $["*"] instanceof Function
 				$["*"].apply $, [ json ]
 			else
-				console.log '[opifex] could not dispatch #{json}'
+				console.log "[opifex] could not dispatch #{JSON.stringify json}"
 
-	self.send = () ->
-		console.log "[opifex] send called with no output channel"
+	self.send = (message) ->
+		console.log "[opifex] send called with no output channel. message:#{message}"
 
 	mixin = (module) ->
 		return if not module
 		if typeof(module) == 'function'
-			console.log "mixing in function"
+			console.log "mixing in function" #, module
 			module.apply(self,Args)
 		else
 			console.log "mixing in opifex.#{module}"
@@ -94,6 +94,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 		mixin Module
 	else
 		# We require at least one channel. Connect to RabbitMQ, initialize channel(s), then mixin
+
 		# connect to RabbitMQ
 		console.log "Url:#{Url}"
 		connection = new Amqp(Url)

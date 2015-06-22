@@ -276,6 +276,28 @@ test "self dispatches s-exp to '*' if method does not exist and '*' is a functio
 	console.log = log
 	t.end()
 
+test "self logs error if s-exp and method does not exist and '*' is a not function", (t) ->
+
+	log = console.log
+	console.log = () ->
+	sinon.spy(console, 'log')
+
+	fun = () ->
+		x = 1
+		this['*'] = x
+
+	self = Opifex(null, null, fun)
+
+	self(new Buffer JSON.stringify ["hello", "there", "world"])
+	t.ok(
+		console.log.calledWith('[opifex] could not dispatch ["hello","there","world"]'),
+		'called console.log with expected message'
+	)
+
+	console.log.restore()
+	console.log = log
+	t.end()
+
 test "self dispatches to '*' if FORCE_RAW_MESSAGES is set and '*' is a function", (t) ->
 
 	process.env['FORCE_RAW_MESSAGES'] = 1
@@ -295,6 +317,75 @@ test "self dispatches to '*' if FORCE_RAW_MESSAGES is set and '*' is a function"
 	self(new Buffer JSON.stringify ["hello", "there", "world"])
 	t.ok(
 		console.log.calledWith('dispatched to "*"'),
+		'called console.log with expected message'
+	)
+
+	console.log.restore()
+	console.log = log
+	t.end()
+
+test "self logs failure to dispatch to '*' if FORCE_RAW_MESSAGES is set and '*' is not a function", (t) ->
+
+	process.env['FORCE_RAW_MESSAGES'] = 1
+	log = console.log
+	console.log = () ->
+	sinon.spy(console, 'log')
+
+	fun = () ->
+		x = 1
+		this.hello = (message...) ->
+			console.log JSON.stringify message
+		this['*'] = 1
+
+	self = Opifex(null, null, fun)
+
+	self(new Buffer JSON.stringify ["hello", "there", "world"])
+	t.ok(
+		console.log.calledWith('[opifex] could not dispatch raw to "*"'),
+		'called console.log with expected message'
+	)
+
+	console.log.restore()
+	console.log = log
+	t.end()
+
+test "mixin sees args if passed", (t) ->
+
+	log = console.log
+	console.log = () ->
+	sinon.spy(console, 'log')
+
+	fun = (args...) ->
+		this.args = args
+
+	self = Opifex(null, null, fun, 1,2,3)
+	console.log self.args
+
+	t.same([1,2,3], self.args, "self sees array of args passed in")
+
+	console.log.restore()
+	console.log = log
+	t.end()
+
+test "mixin as module", (t) ->
+
+	mockery = require 'mockery'
+
+	mockery.enable()
+
+	hello = () ->
+		console.log 'hello world'
+
+	mockery.registerMock 'opifex.hello', hello
+
+	log = console.log
+	console.log = () ->
+	sinon.spy(console, 'log')
+
+	self = Opifex(null, null, "hello")
+
+	t.ok(
+		console.log.calledWith('hello world'),
 		'called console.log with expected message'
 	)
 

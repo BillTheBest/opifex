@@ -7,34 +7,6 @@ url = require 'wot-url'
 
 Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
-	# We want to mixin after channels are initialized.
-	# Since we don't know which are required, and it's a race to initialized,
-	# we use flags to indicate status.
-	SourceIsReady = false
-	SinkIsReady = false
-
-	# We currently only support connecting to a single vhost,
-	# so it shouldn't matter if we get the AMQP URI from source or sink
-	# Maybe we should check they're the same if both exist.
-	if SourceURI
-		src = url.parse SourceURI
-		Source = src.source || src.resource
-		Url = "#{src.protocol}://#{src.user}:#{src.password}@#{src.host}:#{src.port}/#{src.account}"
-	else
-		SourceIsReady = true
-
-	console.log "Source:", Source
-
-	if SinkURI
-		dst = url.parse SinkURI
-		Sink = dst.sink || dst.resource
-		Url = "#{dst.protocol}://#{dst.user}:#{dst.password}@#{dst.host}:#{dst.port}/#{dst.account}"
-	else
-		SinkIsReady = true
-
-	console.log "Sink:", Sink
-
-
 	# this is our message handler, takes a Buffer, and an object
 	self = (message, headers)  ->
 		console.log("got",message,headers)
@@ -89,6 +61,33 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 		else
 			console.log "mixing in opifex.#{module}"
 			(require "opifex.#{module}").apply(self,Args)
+
+	# We want to mixin after channels are initialized.
+	# Since we don't know which are required, and it's a race to initialized,
+	# we use flags to indicate status.
+	SourceIsReady = false
+	SinkIsReady = false
+
+	# We currently only support connecting to a single vhost,
+	# so it shouldn't matter if we get the AMQP URI from source or sink
+	# Maybe we should check they're the same if both exist.
+	if SourceURI
+		src = url.parse SourceURI
+		Source = src.source || src.resource
+		Url = "#{src.protocol}://#{src.user}:#{src.password}@#{src.host}:#{src.port}/#{src.account}"
+	else
+		SourceIsReady = true
+
+	console.log "Source:", Source
+
+	if SinkURI
+		dst = url.parse SinkURI
+		Sink = dst.sink || dst.resource
+		Url = "#{dst.protocol}://#{dst.user}:#{dst.password}@#{dst.host}:#{dst.port}/#{dst.account}"
+	else
+		SinkIsReady = true
+
+	console.log "Sink:", Sink
 
 	if not Source and not Sink
 		mixin Module

@@ -9,9 +9,10 @@ module = () ->
 		else
 			console.log JSON.stringify message
 
-amqp = process.env['AMQP'] || 'amqp://test:test@172.17.42.1:5672/wot'
-source = process.env['SOURCE'] || 'test01.source'
-sink = process.env['SINK'] || 'test01.sink'
+
+process.env['APP'] = 'opifex'
+source = process.env['SOURCE'] || 'amqp://test:test@172.17.42.1:5672/wot/test01.source'
+sink = process.env['SINK'] || 'amqp://test:test@172.17.42.1:5672/wot/test01.sink'
 args = []
 
-Opifex.apply(Opifex,[ amqp, source, sink, module, args ])
+Opifex.apply(Opifex,[ source, sink, module, args ])

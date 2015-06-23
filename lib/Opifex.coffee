@@ -4,13 +4,19 @@
 #
 Amqp = require('wot-amqplib/event_api').AMQP
 url = require 'wot-url'
+logger = require 'wot-logger'
 
 Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
+	log = logger()
+
 	# this is our message handler, takes a Buffer, and an object
 	self = (message, headers)  ->
-		console.log("got",message,headers)
 		$ = arguments.callee
+
+		$.log = log
+
+		log.debug("got",message,headers)
 
 		return if not message
 
@@ -19,7 +25,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 			if $.hasOwnProperty("*") and $["*"] instanceof Function
 				$["*"].apply $, [ message ]
 			else
-				console.log '[opifex] could not dispatch raw to "*"'
+				log.error 'could not dispatch raw to "*"'
 
 		else
 			# Try to interpret message as JSON. If it isn't, try to dispatch to '*'.
@@ -29,7 +35,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				if $.hasOwnProperty("*") and $["*"] instanceof Function
 					$["*"].apply $, [ message ]
 				else
-					console.log '[opifex] could not dispatch binary to "*"'
+					log.warn 'could not dispatch binary to "*"'
 				return
 
 			# If message is an array, try to interpret as s-exp.
@@ -42,24 +48,24 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				else if $.hasOwnProperty("*") and $["*"] instanceof Function
 					$["*"].apply $, json
 				else
-					console.log "[opifex] could not dispatch #{JSON.stringify json}"
+					log.warn "could not dispatch #{JSON.stringify json}"
 
 			# Not an array, so no method matching. Try to dispatch to '*'.
 			else if $.hasOwnProperty("*") and $["*"] instanceof Function
 				$["*"].apply $, [ json ]
 			else
-				console.log "[opifex] could not dispatch #{JSON.stringify json}"
+				log.warn "could not dispatch #{JSON.stringify json}"
 
 	self.send = (message) ->
-		console.log "[opifex] send called with no output channel. message:#{message}"
+		log.warn "send called with no output channel. message:#{message}"
 
 	mixin = (module) ->
 		return if not module
 		if typeof(module) == 'function'
-			console.log "mixing in function" #, module
+			log.info "mixing in function"
 			module.apply(self,Args)
 		else
-			console.log "mixing in opifex.#{module}"
+			log.info "mixing in opifex.#{module}"
 			(require "opifex.#{module}").apply(self,Args)
 
 	# We want to mixin after channels are initialized.
@@ -78,7 +84,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 	else
 		SourceIsReady = true
 
-	console.log "Source:", Source
+	log.info "Source:#{Source}"
 
 	if SinkURI
 		dst = url.parse SinkURI
@@ -87,7 +93,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 	else
 		SinkIsReady = true
 
-	console.log "Sink:", Sink
+	log.info "Sink:#{Sink}"
 
 	if not Source and not Sink
 		mixin Module
@@ -95,26 +101,26 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 		# We require at least one channel. Connect to RabbitMQ, initialize channel(s), then mixin
 
 		# connect to RabbitMQ
-		console.log "Url:#{Url}"
+		log.info "Url:#{Url}"
 		connection = new Amqp(Url)
 
 		# bail on error
 		connection.on 'error', (Message) ->
-			console.log "[opifex] error #{Message }"
+			log.error "error #{Message }"
 			process.exit 1
 		
 		# bail on loss of connectivity
 		connection.on 'closed', () ->
-			console.log "[opifex] got connection close"
+			log.error "got connection close"
 			process.exit 2
 	
 		connection.on 'connected', () ->
-			console.log "connected"
+			log.info "connected"
 
 			if Source
 				# the input channel will be used for all inbound messages
 				input = connection.createChannel()
-				console.log "created input"
+				log.debug "created input"
 
 				[ SourceExchange, SourceQueue, SourceKey ] = Source.split '/'
 				SourceQueue ||= SourceExchange
@@ -122,32 +128,32 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
 				# input error
 				input.on 'error', (e) ->
-					console.log "[opifex] input error #{e}"
+					log.error "input error #{e}"
 
 				# once the channel is opened, we declare the input queue
 				input.on 'channel_opened', () ->
-					console.log "input opened"
+					log.debug "input opened"
 					input.declareQueue SourceQueue, {}
 
 				# once we have the queue declared, we will start the subscription
 				input.on 'queue_declared', (m,queue) ->
-					console.log "input queue declared"
+					log.debug "input queue declared"
 					input.declareExchange SourceExchange, 'topic', {}
 
 				# exchange declared
 				input.on 'exchange_declared', (m,exchange) ->
-					console.log "input exchange declared #{exchange}"
+					log.debug "input exchange declared #{exchange}"
 					if exchange == SourceExchange
 						input.bindQueue SourceQueue, SourceExchange, SourceKey, {}
 				
 				# once we're bound, setup consumption
 				input.on 'queue_bound', (m, a) ->
-					console.log "input queue bound #{a}"
+					log.debug "input queue bound #{a}"
 					input.consume a[0], { noAck: false }
 
 				# once we have our subscription, we'll setup the message handler
 				input.on 'subscribed', (m,queue) ->
-					console.log "input subscribed"
+					log.debug "input subscribed"
 					# Finally mix in the behaviors either by method or module
 					SourceIsReady = true
 					mixin Module if SinkIsReady
@@ -162,35 +168,35 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 			if Sink
 				# the output channel will be used for all outbound messages
 				output = connection.createChannel()
-				console.log "output created"
+				log.debug "output created"
 
 				[ SinkExchange, SinkKey ] = Sink.split '/'
 				SinkKey ||= '#'
 
 				output.on 'error', (e) ->
-					console.log "[opifex] output error #{e}"
+					log.error "output error #{e}"
 
 				# by declaring our exchange we're assured that it will exist before we send
 				output.on 'channel_opened', () ->
-					console.log "output opened"
+					log.debug "output opened"
 					output.declareExchange SinkExchange, 'topic', {}
 				
 				# Our opifex has a fixed route out.
 				output.on 'exchange_declared', (m, exchange) ->
-					console.log "output exchange declared #{exchange}"
+					log.debug "output exchange declared #{exchange}"
 					output.declareQueue exchange, {}
 
 				output.on 'queue_declared', (m,queue) ->
-					console.log "output queue declared #{queue}"
+					log.debug "output queue declared #{queue}"
 					output.bindQueue queue,SinkExchange,'#', {}
 
 				output.on 'queue_bound', (m,a) ->
-					console.log "output queue bound"
+					log.debug "output queue bound"
 
 					# once our exchange is declared we can expose the send interface
 					self.send = (msg, meta) ->
 						meta ||= SinkKey
-						console.log "sending message #{SinkExchange} #{meta} #{msg}"
+						log.debug "sending message #{SinkExchange} #{meta} #{msg}"
 						output.publish SinkExchange, meta, new Buffer(msg), {}
 
 					# Finally mix in the behaviors either by method or module

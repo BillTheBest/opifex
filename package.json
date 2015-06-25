@@ -3,7 +3,7 @@
   "name": "opifex",
   "license": "MIT",
   "description": "A general purpose AMQP laborer",
-  "version": "1.0.1",
+  "version": "1.1.2",
   "repository": {
     "url": "http://github.com/WoTio/opifex"
   },
@@ -12,14 +12,19 @@
     "opifex": "./bin/opifex"
   },
   "dependencies": {
-    "wot-amqplib": "0.3.1"
+    "wot-amqplib": "0.3.1",
+    "wot-logger": "0.0.4",
+    "wot-url": "0.2.0"
   },
   "directories": {
     "test": "test",
     "lib": "lib"
   },
   "devDependencies": {
-    "tap": "~0.3.3"
+    "tap": "~0.3.3",
+    "mockery": "1.4.0",
+    "proxyquire": "1.5.0",
+    "ibrik": "2.0.0"
   },
   "optionalDependencies": {},
   "engines": {

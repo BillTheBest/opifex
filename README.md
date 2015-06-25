@@ -9,7 +9,7 @@ Usage
 First write a script like:
 
 	Opifex = require 'opifex'
-	Opifex('amqp://user:password@host:port/domain', 'source', 'destination', () ->
+	Opifex('amqp://user:password@host:port/domain/source', 'amqp://user:password@host:port/domain/destination', () ->
 		@facit = (command) ->
 			console.log "Got command #{command}"
 	)

@@ -2,6 +2,19 @@
 #
 #	© 2013 Dave Goehrig <dave@dloh.org>
 #
+
+# Configure default service name for logging.
+# Each opifex should override.
+process.env['APP'] ||= 'opifex'
+
+QueueOpts = 
+	durable: Boolean process.env['AMQP_QUEUE_DURABLE'] || false
+	autoDelete: Boolean process.env['AMQP_QUEUE_AUTODELETE'] || true
+
+ExchangeOpts = 
+	durable: Boolean process.env['AMQP_EXCHANGE_DURABLE'] || false
+	autoDelete: Boolean process.env['AMQP_EXCHANGE_AUTODELETE'] || true
+
 Amqp = require('wot-amqplib/event_api').AMQP
 url = require 'wot-url'
 logger = require 'wot-logger'
@@ -150,7 +163,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				# once the channel is opened, we declare the input queue
 				input.on 'channel_opened', () ->
 					log.debug "input opened"
-					input.declareQueue SourceQueue, {}
+					input.declareQueue SourceQueue, QueueOpts
 
 				# once we have the queue declared, we will start the subscription
 				input.on 'queue_declared', (m,queue) ->
@@ -170,7 +183,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 								log.debug "subscribing to #{a}"
 								input.consume a[0], { noAck: false }
 
-						input.declareExchange SourceQueue, 'topic', {}
+						input.declareExchange SourceQueue, 'topic', ExchangeOpts
 
 				# once we have our subscription, we'll setup the message handler
 				input.on 'subscribed', (m,queue) ->
@@ -191,9 +204,9 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 											input.bindQueue SourceQueue, SourceExchange, SourceKey, {}
 									input.bindQueue SourceExchange, SourceExchange, '#', {}
 
-							input.declareExchange SourceExchange, 'topic', {}
+							input.declareExchange SourceExchange, 'topic', ExchangeOpts
 
-						input.declareQueue SourceExchange, {}
+						input.declareQueue SourceExchange, QueueOpts
 
 					# Finally mix in the behaviors either by method or module
 					SourceIsReady = true
@@ -223,12 +236,12 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				# by declaring our exchange we're assured that it will exist before we send
 				output.on 'channel_opened', () ->
 					log.debug "output opened"
-					output.declareExchange SinkExchange, 'topic', {}
+					output.declareExchange SinkExchange, 'topic', ExchangeOpts
 				
 				# Our opifex has a fixed route out.
 				output.on 'exchange_declared', (m, exchange) ->
 					log.debug "output exchange declared #{exchange}"
-					output.declareQueue exchange, {}
+					output.declareQueue exchange, QueueOpts
 
 				output.on 'queue_declared', (m,queue) ->
 					log.debug "output queue declared #{queue}"

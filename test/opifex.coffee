@@ -246,7 +246,6 @@ test "self dispatches s-exp to '*' if method does not exist and '*' is a functio
 	fun = () ->
 		x = 1
 		this['*'] = (message...) ->
-			console.log 'YOU ARE HERE', message
 			this.log.debug JSON.stringify message
 
 	self = Opifex(null, null, fun)
@@ -279,11 +278,64 @@ test "self logs error if s-exp and method does not exist and '*' is a not functi
 
 	t.end()
 
-test "self dispatches to '*' if FORCE_RAW_MESSAGES is set and '*' is a function", (t) ->
+test "defaults correctly set if env vars undefined", (t) ->
 
 	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
 
-	process.env['FORCE_RAW_MESSAGES'] = 1
+	fun = () ->
+		this['*'] = () ->
+			this.log.debug 'dispatched to "*"'
+
+	self = Opifex(null, null, fun)
+
+	self(new Buffer 0)
+
+	t.ok( 'ForceRawMessages: false' in logged['INFO'], 'ForceRawMessages == false')
+	t.ok( 'QueueOpts.durable: false' in logged['INFO'], 'QueueOpts.durable == false')
+	t.ok( 'QueueOpts.autoDelete: true' in logged['INFO'], 'QueueOpts.autoDelete == true')
+	t.ok( 'ExchangeOpts.durable: false' in logged['INFO'], 'ExchangeOpts.durable == false')
+	t.ok( 'ExchangeOpts.autoDelete: true' in logged['INFO'], 'ExchangeOpts.autoDelete == true')
+
+
+	t.end()
+
+test "env vars override defaults", (t) ->
+
+	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
+
+	fun = () ->
+		this['*'] = () ->
+			this.log.debug 'dispatched to "*"'
+
+	process.env['FORCE_RAW_MESSAGES'] = 'true'
+	process.env['AMQP_QUEUE_DURABLE'] = 'true'
+	process.env['AMQP_QUEUE_AUTODELETE'] = 'false'
+	process.env['AMQP_EXCHANGE_DURABLE'] = 'true'
+	process.env['AMQP_EXCHANGE_AUTODELETE'] = 'false'
+
+	self = Opifex(null, null, fun)
+
+	self(new Buffer 0)
+
+	t.ok( 'ForceRawMessages: true' in logged['INFO'], 'ForceRawMessages == true')
+	t.ok( 'QueueOpts.durable: true' in logged['INFO'], 'QueueOpts.durable == true')
+	t.ok( 'QueueOpts.autoDelete: false' in logged['INFO'], 'QueueOpts.autoDelete == false')
+	t.ok( 'ExchangeOpts.durable: true' in logged['INFO'], 'ExchangeOpts.durable == true')
+	t.ok( 'ExchangeOpts.autoDelete: false' in logged['INFO'], 'ExchangeOpts.autoDelete == false')
+
+	delete process.env['FORCE_RAW_MESSAGES']
+	delete process.env['AMQP_QUEUE_DURABLE']
+	delete process.env['AMQP_QUEUE_AUTODELETE']
+	delete process.env['AMQP_EXCHANGE_DURABLE']
+	delete process.env['AMQP_EXCHANGE_AUTODELETE']
+
+	t.end()
+
+test "self dispatches to '*' if FORCE_RAW_MESSAGES is true and '*' is a function", (t) ->
+
+	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
+
+	process.env['FORCE_RAW_MESSAGES'] = 'true'
 
 	fun = () ->
 		x = 1
@@ -301,13 +353,14 @@ test "self dispatches to '*' if FORCE_RAW_MESSAGES is set and '*' is a function"
 		'called log.debug with expected message'
 	)
 
-	t.end()
+	delete process.env['FORCE_RAW_MESSAGES']
 
-test "self logs failure to dispatch to '*' if FORCE_RAW_MESSAGES is set and '*' is not a function", (t) ->
+	t.end()
+test "self logs failure to dispatch to '*' if FORCE_RAW_MESSAGES is true and '*' is not a function", (t) ->
 
 	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
 
-	process.env['FORCE_RAW_MESSAGES'] = 1
+	process.env['FORCE_RAW_MESSAGES'] = 'true'
 
 	fun = () ->
 		x = 1
@@ -324,6 +377,7 @@ test "self logs failure to dispatch to '*' if FORCE_RAW_MESSAGES is set and '*' 
 		'called log.error with expected message'
 	)
 
+	delete process.env['FORCE_RAW_MESSAGES']
 	t.end()
 
 test "mixin sees args if passed", (t) ->

@@ -5,23 +5,42 @@
 
 # Configure default service name for logging.
 # Each opifex should override.
-process.env['APP'] ||= 'opifex'
-
-QueueOpts = 
-	durable: Boolean process.env['AMQP_QUEUE_DURABLE'] || false
-	autoDelete: Boolean process.env['AMQP_QUEUE_AUTODELETE'] || true
-
-ExchangeOpts = 
-	durable: Boolean process.env['AMQP_EXCHANGE_DURABLE'] || false
-	autoDelete: Boolean process.env['AMQP_EXCHANGE_AUTODELETE'] || true
+process.env['MODULE'] ||= 'opifex'
 
 Amqp = require('wot-amqplib/event_api').AMQP
 url = require 'wot-url'
 logger = require 'wot-logger'
 
+# Exchanges and queues are transient by default, configurable by env.
+QueueOpts = 
+	durable: false
+	autoDelete: true
+
+ExchangeOpts =
+	durable: false
+	autoDelete: true
+
+# Default behavior is to try to interpret messages as s-expressions, configurable by env.
+# If in raw mode, message handler will try to dispatch to '*' method.
+ForceRawMessages = false
+
 Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
 	log = logger()
+
+	if process.env['FORCE_RAW_MESSAGES'] == 'true'
+		ForceRawMessages = true
+
+	QueueOpts.durable = true if process.env['AMQP_QUEUE_DURABLE'] == 'true'
+	QueueOpts.autoDelete = false if process.env['AMQP_QUEUE_AUTODELETE']? and process.env['AMQP_QUEUE_AUTODELETE'] != 'true'
+	ExchangeOpts.durable = true if process.env['AMQP_EXCHANGE_DURABLE'] == 'true'
+	ExchangeOpts.autoDelete = false if process.env['AMQP_EXCHANGE_AUTODELETE']? and process.env['AMQP_EXCHANGE_AUTODELETE'] != 'true'
+
+	log.info "ForceRawMessages: #{ForceRawMessages}"
+	log.info "QueueOpts.durable: #{QueueOpts.durable}"
+	log.info "QueueOpts.autoDelete: #{QueueOpts.autoDelete}"
+	log.info "ExchangeOpts.durable: #{ExchangeOpts.durable}"
+	log.info "ExchangeOpts.autoDelete: #{ExchangeOpts.autoDelete}"
 
 	bindings = {}
 
@@ -38,7 +57,8 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 		$.headers = headers
 
 		# Raw mode. Try to dispatch to '*' with no examination or manipulation of message.
-		if process.env['FORCE_RAW_MESSAGES']?
+		if ForceRawMessages
+			log.debug 'forcing to raw mode'
 			if $.hasOwnProperty("*") and $["*"] instanceof Function
 				$["*"].apply $, [ message ]
 			else

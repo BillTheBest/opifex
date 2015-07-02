@@ -1,24 +1,99 @@
-# Set up mocking of wot-logger in opifex
+mockery = require 'mockery'
+mockery.enable({ useCleanCache: true })
+mockery.warnOnUnregistered(false)
+
+# Set up mocking of wot-logger
 logged = {
 	"ERROR": [],
 	"WARN":  [],
 	"INFO":  [],
 	"DEBUG": []
 }
-proxyquire = require('proxyquire').noCallThru()
-proxyquire.load 'opifex', {"wot-logger":
-	() ->
-		log: (level, message) ->
-			logged[level.toUpperCase()].push message
-		error: (message) ->
-               		this.log 'error', message
-		warn: (message) ->
-               		this.log 'warn', message
-		info: (message) ->
-               		this.log 'info', message
-		debug: (message) ->
-               		this.log 'debug', message
+
+mockery.registerMock('wot-logger', () ->
+	log: (level, message) ->
+		logged[level.toUpperCase()].push message
+	error: (message) ->
+		this.log 'error', message
+	warn: (message) ->
+		this.log 'warn', message
+	info: (message) ->
+		this.log 'info', message
+	debug: (message) ->
+		this.log 'debug', message
+)
+
+# Set up mocking of wot-amqp
+published = {
 }
+EventEmitter = (require 'events').EventEmitter
+inherits = require 'inherits'
+
+AMQP = (url) ->
+	self = this
+	self.setMaxListeners(1024)
+
+	# AMQP
+	self.connect = () ->
+		self.emit('connected')
+	self.error = () ->
+		self.emit('error', 'test')
+	self.createChannel = () ->
+		self
+
+	# Channel
+	self.nack = (message, allUpTo, requeue) ->
+	self.nackAll = (requeue) ->
+	self.rpc = (method, fields, expect, response, args) ->
+	self.open = () ->
+		self.emit 'channel_opened'
+	self.close = () ->
+		self.emit('closed')
+	self.declareQueue = (queue, options) ->
+		self.emit 'queue_declared', undefined, queue
+	self.checkQueue = (queue) ->
+	self.deleteQueue = (queue, options) ->
+	self.purgeQueue = (queue) ->
+	self.bindQueue = (queue, source, pattern, argt) ->
+		self.emit 'queue_bound', undefined, [queue, source, pattern]
+	self.unbindQueue = (queue, source, pattern, argt) ->
+	self.declareExchange = (exchange, type, options) ->
+		self.emit 'exchange_declared', undefined, exchange
+	self.checkExchange = (exchange) ->
+	self.deleteExchange = (exchange, options) ->
+	self.bindExchange = (dest, source, pattern, argt) ->
+	self.unbindExchange = (dest, source, pattern, argt) ->
+	self.publish = (exchange, routingKey, content, options) ->
+		console.log "PUBLISH", exchange, routingKey, content.toString()
+		published[routingKey] = [] if not published[routingKey]?
+		published[routingKey].push content
+	self.sendToQueue = (queue, message, options) ->
+	self.consume = (queue, options) ->
+		self.emit 'subscribed', undefined ,queue
+	self.cancel = (consumerTag) ->
+	self.get = (queue, options) ->
+	self.ack = (message, allUpTo) ->
+	self.ackAll = () ->
+	self.nack = (message, allUpTo, requeue) ->
+	self.nackAll = (requeue) ->
+	self.reject = (message, requeue) ->
+	self.prefetch = (count, global) ->
+	self.recover = () ->
+	self.confirmSelect = (nowait) ->
+
+	setInterval self.connect, 10
+	setInterval self.close, 100
+
+	# force the event loop to run until we want to exit
+	require('net').createServer().listen()
+
+	return self
+
+inherits(AMQP, EventEmitter)
+
+mockery.registerMock('wot-amqplib/event_api', {
+	AMQP: AMQP
+})
 
 Opifex = require 'opifex'
 
@@ -278,6 +353,79 @@ test "self logs error if s-exp and method does not exist and '*' is a not functi
 
 	t.end()
 
+test "opifex parses source if SourceURI is defined", (t) ->
+
+	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
+
+	bindings = null
+
+	fun = () ->
+		this['*'] = () ->
+
+	self = Opifex('amqp://user:pass@host:5642/domain/resource', null, fun)
+
+	t.ok(
+		'Source:resource' in logged['INFO'],
+		'called log.info with expected message'
+	)
+
+	t.end()
+
+test "opifex parses source if SourceURI is an explicit binding", (t) ->
+
+	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
+
+	bindings = null
+
+	fun = () ->
+		this['*'] = () ->
+
+	self = Opifex('amqp://user:pass@host:5642/domain/source/dest/pattern', null, fun)
+
+	t.ok(
+		'Source:source/dest/pattern' in logged['INFO'],
+		'called log.info with expected message'
+	)
+
+	t.end()
+
+test "self sends message to sink if SinkURI is defined", (t) ->
+
+	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
+
+	fun = () ->
+		this['*'] = () ->
+		#this.send "we are alive"
+
+	self = Opifex(null,'amqp://user:pass@host:5642/domain/resource', fun)
+
+	self('["hello", "world"]')
+
+	t.ok(
+		'Sink:resource' in logged['INFO'],
+		'called log.info with expected message'
+	)
+
+	t.end()
+
+test "opifex parses sink if SinkURI is <resource>/<metadata>", (t) ->
+
+	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
+
+	bindings = null
+
+	fun = () ->
+		this['*'] = () ->
+
+	try self = Opifex(null,'amqp://user:pass@host:5642/domain/resource/metadata', fun)
+
+	t.ok(
+		'Sink:resource/metadata' in logged['INFO'],
+		'called log.info with expected message'
+	)
+
+	t.end()
+
 test "defaults correctly set if env vars undefined", (t) ->
 
 	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }
@@ -356,6 +504,7 @@ test "self dispatches to '*' if FORCE_RAW_MESSAGES is true and '*' is a function
 	delete process.env['FORCE_RAW_MESSAGES']
 
 	t.end()
+
 test "self logs failure to dispatch to '*' if FORCE_RAW_MESSAGES is true and '*' is not a function", (t) ->
 
 	logged = { "ERROR": [], "WARN":  [], "INFO":  [], "DEBUG": [] }

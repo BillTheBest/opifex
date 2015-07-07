@@ -143,6 +143,22 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 	else
 		# We require at least one channel. Connect to RabbitMQ, initialize channel(s), then mixin
 
+		# sets up a exchange / key / queue binding
+		self.bind = (channel,exchange,key,queue) ->
+			channel.on 'exchange_declared',  (m,ex) ->
+				if ex == exchange
+					channel.removeListener('exchange_declared', arguments.callee)
+					channel.declareQueue queue, QueueOpts
+			channel.on 'queue_declared', (m,q) ->
+				if q == queue
+					channel.removeListener('queue_declared', arguments.callee)
+					channel.bindQueue queue, exchange, key, {}
+			channel.on 'queue_bound', (m, a) ->
+				if a[0] == queue && a[1] == exchange && a[2] == key
+					channel.removeListener('queue_bound', arguments.callee)
+					channel.emit 'bound', exchange, key, queue
+			channel.declareExchange exchange, 'topic', ExchangeOpts
+
 		# connect to RabbitMQ
 		log.info "Url:#{Url}"
 		connection = new Amqp(Url)
@@ -173,60 +189,29 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 					key: SourceKey
 					queue: SourceQueue
 
-				DestinationResourceIsBound = false
-				SourceResourceIsBound = false
-
 				# input error
 				input.on 'error', (e) ->
 					log.error "input error #{e}"
 
-				# once the channel is opened, we declare the input queue
+				# once the channel is opened, we declare the source bindings
 				input.on 'channel_opened', () ->
 					log.debug "input opened"
-					input.declareQueue SourceQueue, QueueOpts
+					# ensure the resources and binding exist
+					self.bind input, SourceExchange, '#', SourceExchange
+					if SourceExchange != SourceQueue
+						self.bind input, SourceQueue, '#', SourceQueue
+						self.bind input, SourceExchange, SourceKey, SourceQueue
 
-				# once we have the queue declared, we will start the subscription
-				input.on 'queue_declared', (m,queue) ->
-					log.debug "input queue declared #{queue}"
-					# Ensure that we have the default resource binding for the queue
-					if queue == SourceQueue and not DestinationResourceIsBound
-						input.on 'exchange_declared', (m,exchange) ->
-							log.debug "input exchange declared #{exchange}"
-							if exchange == SourceQueue
-								input.bindQueue SourceQueue, SourceQueue, '#', {}
-					
-						# once we're bound, setup consumption
-						input.on 'queue_bound', (m, a) ->
-							DestinationResourceIsBound = true
-							log.debug "input resource bound #{a}"
-							if a[0] == SourceQueue and a[1] == SourceQueue
-								log.debug "subscribing to #{a}"
-								input.consume a[0], { noAck: false }
-
-						input.declareExchange SourceQueue, 'topic', ExchangeOpts
+				# once we're bound, setup consumption
+				input.on 'bound', (exchange, key, queue) ->
+					log.debug "input resource bound #{exchange}, #{key}, #{queue}"
+					if not SourceIsReady and exchange == SourceExchange and queue == SourceQueue and key == SourceKey
+						log.debug "XXX source bound #{exchange}, #{key}, #{queue}"
+						input.consume SourceQueue, { noAck: false }
 
 				# once we have our subscription, we'll setup the message handler
 				input.on 'subscribed', (m,queue) ->
 					log.debug "input subscribed"
-					# If source and dest don't match,
-					# we need to ensure the default resource binding for the exchange
-					if SourceExchange != SourceQueue
-						input.on 'queue_declared', (m,queue) ->
-							log.debug "input queue declared #{queue}"
-							input.on 'exchange_declared', (m,exchange) ->
-								log.debug "input exchange declared #{exchange}"
-								if queue == SourceExchange and not SourceResourceIsBound
-									input.on 'queue_bound', (m, a) ->
-										if a[0] == SourceExchange and a[1] == SourceExchange and a[2] == '#'
-											SourceResourceIsBound = true
-											log.debug "input source resource bound #{a}"
-											# We also need the explicit binding of source and dest
-											input.bindQueue SourceQueue, SourceExchange, SourceKey, {}
-									input.bindQueue SourceExchange, SourceExchange, '#', {}
-
-							input.declareExchange SourceExchange, 'topic', ExchangeOpts
-
-						input.declareQueue SourceExchange, QueueOpts
 
 					# Finally mix in the behaviors either by method or module
 					SourceIsReady = true
@@ -253,22 +238,14 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				output.on 'error', (e) ->
 					log.error "output error #{e}"
 
-				# by declaring our exchange we're assured that it will exist before we send
+				# once the channel is opened, we declare the sink binding
 				output.on 'channel_opened', () ->
 					log.debug "output opened"
-					output.declareExchange SinkExchange, 'topic', ExchangeOpts
+					# ensure the resource exists
+					self.bind output, SinkExchange, '#', SinkExchange
 				
-				# Our opifex has a fixed route out.
-				output.on 'exchange_declared', (m, exchange) ->
-					log.debug "output exchange declared #{exchange}"
-					output.declareQueue exchange, QueueOpts
-
-				output.on 'queue_declared', (m,queue) ->
-					log.debug "output queue declared #{queue}"
-					output.bindQueue queue,SinkExchange,'#', {}
-
-				output.on 'queue_bound', (m,a) ->
-					log.debug "output queue bound"
+				output.on 'bound', (exchange, key, queue) ->
+					log.debug "output resource bound #{exchange}, #{key}, #{queue}"
 
 					# once our exchange is declared we can expose the send interface
 					self.send = (msg, meta) ->

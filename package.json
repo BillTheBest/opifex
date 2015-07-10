@@ -3,7 +3,7 @@
   "name": "opifex",
   "license": "MIT",
   "description": "A general purpose AMQP laborer",
-  "version": "1.1.4",
+  "version": "1.1.5",
   "repository": {
     "url": "http://github.com/WoTio/opifex"
   },
@@ -21,7 +21,7 @@
     "lib": "lib"
   },
   "devDependencies": {
-    "tap": "~0.3.3",
+    "tap": "~1.3.1",
     "mockery": "1.4.0",
     "ibrik": "2.0.0"
   },
@@ -30,6 +30,6 @@
     "node": "0.12.2"
   },
   "scripts": {
-    "test": "node_modules/tap/bin/tap.js test/[0-9]*.coffee"
+    "test": "node_modules/.bin/tap test/[0-9]*.coffee"
   }
 }

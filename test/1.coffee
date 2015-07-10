@@ -1,3 +1,4 @@
+#!/usr/bin/env coffee
 mock = require './mock.coffee'
 mockery = require 'mockery'
 mockery.enable({ useCleanCache: true })

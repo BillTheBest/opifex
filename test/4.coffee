@@ -23,22 +23,3 @@ setTimeout () ->
 mock.init()
 fun = () -> this['*'] = () ->
 self = Opifex(null,'amqp://user:pass@host:5642/domain/resource/metadata', fun)
-
-##test "self sends message to sink if SinkURI is defined", (t) ->
-
-##	mock.init()
-
-##	fun = () ->
-##		this['*'] = () ->
-##		#this.send "we are alive"
-
-##	self = Opifex(null,'amqp://user:pass@host:5642/domain/resource', fun)
-
-##	self('["hello", "world"]')
-
-##	t.ok(
-##		'Sink:resource' in logged['INFO'],
-##		'called log.info with expected message'
-##	)
-
-##	t.end()

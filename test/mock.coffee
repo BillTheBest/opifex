@@ -47,7 +47,7 @@ Channel = () ->
 	self.open = () ->
 		self.emit 'channel_opened'
 	self.close = () ->
-		self.emit('closed')
+		self.emit('channel_closed')
 	self.declareQueue = (queue, options) ->
 		self.emit 'queue_declared', undefined, queue
 	self.checkQueue = (queue) ->
@@ -82,20 +82,23 @@ Channel = () ->
 	self.error = () ->
 		self.emit('error', 'test')
 	self.confirmSelect = (nowait) ->
-	# yeah, ok, this is a hack
+
+	# conditionally emit error event for tests
 	if process.env['MOCK_CHANNEL_EMIT_ERROR'] == 'true'
 		setTimeout self.error, 100
+
 	return self
 
 inherits(Channel, EventEmitter)
 
-# This is a real bare-bones AMQP, and all happy-path
-# We can add logic to emit different events to force error paths...
+# This is a real bare-bones AMQP
 module.exports.AMQP = (url) ->
 	self = this
 
 	self.connect = () ->
 		self.emit('connected')
+	self.close = () ->
+		self.emit('closed')
 	self.error = () ->
 		self.emit('error', 'test')
 	self.createChannel = () ->
@@ -104,8 +107,12 @@ module.exports.AMQP = (url) ->
 	# connect event need to fire after new() and sets up the listeners.
 	setTimeout self.connect, 10
 
-	# make sure we exit eventually.
-	#setTimeout self.close, 100
+	# conditionally emit closed and error events for tests
+	if process.env['MOCK_CONNECTION_EMIT_CLOSED'] == 'true'
+		setTimeout self.close, 100
+
+	if process.env['MOCK_CONNECTION_EMIT_ERROR'] == 'true'
+		setTimeout self.error, 100
 
 	# force the event loop to run until we want to exit
 	require('net').createServer().listen()

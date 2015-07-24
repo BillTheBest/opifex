@@ -79,7 +79,12 @@ Channel = () ->
 	self.reject = (message, requeue) ->
 	self.prefetch = (count, global) ->
 	self.recover = () ->
+	self.error = () ->
+		self.emit('error', 'test')
 	self.confirmSelect = (nowait) ->
+	# yeah, ok, this is a hack
+	if process.env['MOCK_CHANNEL_EMIT_ERROR'] == 'true'
+		setTimeout self.error, 100
 	return self
 
 inherits(Channel, EventEmitter)

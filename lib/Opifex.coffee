@@ -192,6 +192,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				# input error
 				input.on 'error', (e) ->
 					log.error "input error #{e}"
+					process.exit 1
 
 				# once the channel is opened, we declare the source bindings
 				input.on 'channel_opened', () ->
@@ -237,6 +238,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
 				output.on 'error', (e) ->
 					log.error "output error #{e}"
+					process.exit 1
 
 				# once the channel is opened, we declare the sink binding
 				output.on 'channel_opened', () ->

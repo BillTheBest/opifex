@@ -158,79 +158,6 @@ test "self logs error if s-exp and method does not exist and '*' is a not functi
 	)
 	t.end()
 
-##test "opifex parses source if SourceURI is defined", (t) ->
-
-##	mock.init()
-
-##	bindings = null
-
-##	fun = () ->
-##		this['*'] = () ->
-
-##	self = Opifex('amqp://user:pass@host:5642/domain/resource', null, fun)
-
-##	t.ok(
-##		'Source:resource' in logged['INFO'],
-##		'called log.info with expected message'
-##	)
-
-##	t.end()
-
-##test "opifex parses source if SourceURI is an explicit binding", (t) ->
-
-##	mock.init()
-
-##	bindings = null
-
-##	fun = () ->
-##		this['*'] = () ->
-
-##	self = Opifex('amqp://user:pass@host:5642/domain/source/dest/pattern', null, fun)
-
-##	t.ok(
-##		'Source:source/dest/pattern' in logged['INFO'],
-##		'called log.info with expected message'
-##	)
-
-##	t.end()
-
-##test "self sends message to sink if SinkURI is defined", (t) ->
-
-##	mock.init()
-
-##	fun = () ->
-##		this['*'] = () ->
-##		#this.send "we are alive"
-
-##	self = Opifex(null,'amqp://user:pass@host:5642/domain/resource', fun)
-
-##	self('["hello", "world"]')
-
-##	t.ok(
-##		'Sink:resource' in logged['INFO'],
-##		'called log.info with expected message'
-##	)
-
-##	t.end()
-
-##test "opifex parses sink if SinkURI is <resource>/<metadata>", (t) ->
-
-##	mock.init()
-
-##	bindings = null
-
-##	fun = () ->
-##		this['*'] = () ->
-
-##	try self = Opifex(null,'amqp://user:pass@host:5642/domain/resource/metadata', fun)
-
-##	t.ok(
-##		'Sink:resource/metadata' in logged['INFO'],
-##		'called log.info with expected message'
-##	)
-
-##	t.end()
-
 test "defaults correctly set if env vars undefined", (t) ->
 	mock.init()
 	fun = () -> this['*'] = () -> this.log.debug 'dispatched to "*"'
@@ -240,7 +167,7 @@ test "defaults correctly set if env vars undefined", (t) ->
 	t.ok( 'QueueOpts.durable: false' in mock.logged['INFO'], 'QueueOpts.durable == false')
 	t.ok( 'QueueOpts.autoDelete: true' in mock.logged['INFO'], 'QueueOpts.autoDelete == true')
 	t.ok( 'ExchangeOpts.durable: false' in mock.logged['INFO'], 'ExchangeOpts.durable == false')
-	t.ok( 'ExchangeOpts.autoDelete: true' in mock.logged['INFO'], 'ExchangeOpts.autoDelete == true')
+	t.ok( 'ExchangeOpts.autoDelete: false' in mock.logged['INFO'], 'ExchangeOpts.autoDelete == false')
 	t.end()
 
 test "env vars override defaults", (t) ->

@@ -69,7 +69,7 @@ All opifex adapters can be configured via the following common environment varia
 	`AMQP_QUEUE_DURABLE`=false		Queues declared are transient unless set to true.
 	`AMQP_QUEUE_AUTODELETE`=true		Queues declared are autodelete unless set to false.
 	`AMQP_EXCHANGE_DURABLE`=false		Exchanges declared are transient unless set to true.
-	`AMQP_EXCHANGE_AUTODELETE`=true		Exchanges declared are autodelete unless set to false.
+	`AMQP_EXCHANGE_AUTODELETE`=false	Exchanges declared are not autodelete unless set to true.
 	`FORCE_RAW_MESSAGES`=false		Messages will be dispatched to the `*` method with no examination or manipulation if true.
 
 See individual opifex adapter documentation for adapter-specific configuration.

@@ -18,7 +18,7 @@ QueueOpts =
 
 ExchangeOpts =
 	durable: false
-	autoDelete: true
+	autoDelete: false
 
 # Default behavior is to try to interpret messages as s-expressions, configurable by env.
 # If in raw mode, message handler will try to dispatch to '*' method.
@@ -34,7 +34,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 	QueueOpts.durable = true if process.env['AMQP_QUEUE_DURABLE'] == 'true'
 	QueueOpts.autoDelete = false if process.env['AMQP_QUEUE_AUTODELETE']? and process.env['AMQP_QUEUE_AUTODELETE'] != 'true'
 	ExchangeOpts.durable = true if process.env['AMQP_EXCHANGE_DURABLE'] == 'true'
-	ExchangeOpts.autoDelete = false if process.env['AMQP_EXCHANGE_AUTODELETE']? and process.env['AMQP_EXCHANGE_AUTODELETE'] != 'true'
+	ExchangeOpts.autoDelete = true if process.env['AMQP_EXCHANGE_AUTODELETE'] == 'true'
 
 	log.info "ForceRawMessages: #{ForceRawMessages}"
 	log.info "QueueOpts.durable: #{QueueOpts.durable}"
@@ -207,7 +207,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 				input.on 'bound', (exchange, key, queue) ->
 					log.debug "input resource bound #{exchange}, #{key}, #{queue}"
 					if not SourceIsReady and exchange == SourceExchange and queue == SourceQueue and key == SourceKey
-						log.debug "XXX source bound #{exchange}, #{key}, #{queue}"
+						log.debug "source bound #{exchange}, #{key}, #{queue}"
 						input.consume SourceQueue, { noAck: false }
 
 				# once we have our subscription, we'll setup the message handler
@@ -252,6 +252,8 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 					# once our exchange is declared we can expose the send interface
 					self.send = (msg, meta) ->
 						meta ||= SinkKey
+						# make sure our exchange is still there if it's autodelete
+						output.declareExchange(SinkExchange, 'topic', ExchangeOpts) if ExchangeOpts.autoDelete
 						log.debug "sending message #{SinkExchange} #{meta} #{msg}"
 						output.publish SinkExchange, meta, new Buffer(msg), {}
 

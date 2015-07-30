@@ -251,6 +251,9 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
 					# once our exchange is declared we can expose the send interface
 					self.send = (msg, meta) ->
+						if msg is undefined or msg is null
+							log.warn 'tried to send with no message'
+							return
 						meta ||= SinkKey
 						# make sure our exchange is still there if it's autodelete
 						output.declareExchange(SinkExchange, 'topic', ExchangeOpts) if ExchangeOpts.autoDelete

@@ -57,7 +57,7 @@ In addition Opifex:
 				key: <routing key>
 
 * Exposes the following methods:
-*   @send takes arguments: message[, key]. Sends a message to the configured output exchange. If no key argument, routing key defaults to the configured routing key. If no ouput channel is defined, @send logs a warning. To enable sending binary data over the bus, @send converts message to a Buffer prior to publishing. In order for recipient opifexes to utilize the s-expression method dispatch mechanism, s-expression messages should be formatted as a JSON array, e.g. _@send JSON.stringify ['hello', 'world']_
+*   @send takes arguments: message[, key]. Sends a message to the configured output exchange. If no key argument, routing key defaults to the configured routing key. If no ouput channel is defined, @send logs a warning. To enable sending binary data over the bus, @send converts message to a Buffer prior to publishing. Serializable javascript objects will be converted to JSON before being encoded as a Buffer. 
 
 bin/opifex is a wrapper script provided as a convenience. It can be called with the function arguments as command-line parameters, in order, or configured with environment variables as below.
 

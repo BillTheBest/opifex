@@ -254,6 +254,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 						if msg is undefined or msg is null
 							log.warn 'tried to send with no message'
 							return
+						try msg = JSON.stringify msg if typeof msg is 'object' and not Buffer.isBuffer(msg)
 						meta ||= SinkKey
 						# make sure our exchange is still there if it's autodelete
 						output.declareExchange(SinkExchange, 'topic', ExchangeOpts) if ExchangeOpts.autoDelete

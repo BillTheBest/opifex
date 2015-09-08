@@ -5,7 +5,7 @@
   "description": "A general purpose AMQP laborer",
   "version": "1.1.10",
   "repository": {
-    "url": "http://github.com/WoTio/opifex"
+    "url": "http://github.com/wotio/opifex"
   },
   "main": "./lib/Opifex.coffee",
   "bin": {

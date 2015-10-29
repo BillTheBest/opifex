@@ -219,7 +219,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 					mixin Module if SinkIsReady
 
 					input.on 'message', (m) ->
-						self(m.content,m.fields.headers,m.fields.routingKey)
+						self(m.content,m.properties.headers,m.fields.routingKey)
 						input.ack(m)	 # NB: we ack after invoking our handler!
 				
 				# finally open the channel

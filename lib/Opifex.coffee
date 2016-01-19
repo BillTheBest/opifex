@@ -24,6 +24,8 @@ ExchangeOpts =
 # If in raw mode, message handler will try to dispatch to '*' method.
 ForceRawMessages = false
 
+DebugLogMessageContent = if process.env['DEBUG_LOG_MESSAGE_CONTENT'] == 'true' then true else false
+
 Opifex = (SourceURI,SinkURI,Module,Args...) ->
 
 	log = logger()
@@ -258,7 +260,8 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 						meta ||= SinkKey
 						# make sure our exchange is still there if it's autodelete
 						output.declareExchange(SinkExchange, 'topic', ExchangeOpts) if ExchangeOpts.autoDelete
-						log.debug "sending message #{SinkExchange} #{meta} #{msg}"
+						log.debug "sending #{msg.length} bytes to #{SinkExchange} #{meta}"
+						log.debug "message: #{msg.toString()}" if DebugLogMessageContent
 						output.publish SinkExchange, meta, new Buffer(msg), {}
 
 					# Finally mix in the behaviors either by method or module

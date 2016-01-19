@@ -1,6 +1,6 @@
 {
   "name": "opifex",
-  "version": "1.1.11",
+  "version": "1.1.12",
   "dependencies": {
     "wot-amqplib": {
       "version": "0.3.1",
@@ -19,7 +19,7 @@
           "from": "readable-stream@>=1.0.0 <2.0.0 >=1.1.9",
           "dependencies": {
             "core-util-is": {
-              "version": "1.0.1",
+              "version": "1.0.2",
               "from": "core-util-is@>=1.0.0 <1.1.0"
             },
             "isarray": {
@@ -119,7 +119,7 @@
           "from": "request@2.55.0",
           "dependencies": {
             "bl": {
-              "version": "0.9.4",
+              "version": "0.9.5",
               "from": "bl@>=0.9.0 <0.10.0",
               "dependencies": {
                 "readable-stream": {
@@ -127,7 +127,7 @@
                   "from": "readable-stream@>=1.0.26 <1.1.0",
                   "dependencies": {
                     "core-util-is": {
-                      "version": "1.0.1",
+                      "version": "1.0.2",
                       "from": "core-util-is@>=1.0.0 <1.1.0"
                     },
                     "isarray": {
@@ -179,7 +179,7 @@
               }
             },
             "node-uuid": {
-              "version": "1.4.3",
+              "version": "1.4.7",
               "from": "node-uuid@>=1.4.0 <1.5.0"
             },
             "qs": {
@@ -187,11 +187,11 @@
               "from": "qs@>=2.4.0 <2.5.0"
             },
             "tunnel-agent": {
-              "version": "0.4.1",
+              "version": "0.4.2",
               "from": "tunnel-agent@>=0.4.0 <0.5.0"
             },
             "tough-cookie": {
-              "version": "2.2.0",
+              "version": "2.2.1",
               "from": "tough-cookie@>=0.12.0"
             },
             "http-signature": {
@@ -225,7 +225,7 @@
                   "from": "hoek@>=2.0.0 <3.0.0"
                 },
                 "boom": {
-                  "version": "2.10.0",
+                  "version": "2.10.1",
                   "from": "boom@>=2.0.0 <3.0.0"
                 },
                 "cryptiles": {
@@ -277,7 +277,7 @@
                       "from": "ansi-styles@>=2.1.0 <3.0.0"
                     },
                     "escape-string-regexp": {
-                      "version": "1.0.3",
+                      "version": "1.0.4",
                       "from": "escape-string-regexp@>=1.0.2 <2.0.0"
                     },
                     "has-ansi": {
@@ -317,7 +317,7 @@
                   }
                 },
                 "is-my-json-valid": {
-                  "version": "2.12.2",
+                  "version": "2.12.4",
                   "from": "is-my-json-valid@>=2.12.0 <3.0.0",
                   "dependencies": {
                     "generate-function": {
@@ -339,7 +339,7 @@
                       "from": "jsonpointer@2.0.0"
                     },
                     "xtend": {
-                      "version": "4.0.0",
+                      "version": "4.0.1",
                       "from": "xtend@>=4.0.0 <5.0.0"
                     }
                   }

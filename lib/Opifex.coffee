@@ -261,7 +261,7 @@ Opifex = (SourceURI,SinkURI,Module,Args...) ->
 						# make sure our exchange is still there if it's autodelete
 						output.declareExchange(SinkExchange, 'topic', ExchangeOpts) if ExchangeOpts.autoDelete
 						log.debug "sending #{msg.length} bytes to #{SinkExchange} #{meta}"
-						log.debug "message: #{msg.toString()}" if DebugLogMessageContent
+						log.debug "message: #{msg}" if DebugLogMessageContent
 						output.publish SinkExchange, meta, new Buffer(msg), {}
 
 					# Finally mix in the behaviors either by method or module

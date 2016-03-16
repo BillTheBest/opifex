@@ -13,7 +13,7 @@
   },
   "dependencies": {
     "wot-amqplib": "0.3.1",
-    "wot-logger": "0.0.4",
+    "wot-logger": "0.2.0",
     "wot-url": "0.2.0"
   },
   "directories": {

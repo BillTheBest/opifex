@@ -43,8 +43,8 @@
       }
     },
     "wot-logger": {
-      "version": "0.0.4",
-      "from": "wot-logger@0.0.4",
+      "version": "0.2.0",
+      "from": "wot-logger@0.2.0",
       "dependencies": {
         "winston": {
           "version": "1.0.0",
@@ -77,34 +77,6 @@
             "stack-trace": {
               "version": "0.0.9",
               "from": "stack-trace@>=0.0.0 <0.1.0"
-            }
-          }
-        },
-        "winston-syslog": {
-          "version": "1.1.0",
-          "from": "winston-syslog@1.1.0",
-          "dependencies": {
-            "cycle": {
-              "version": "1.0.3",
-              "from": "cycle@>=1.0.3 <1.1.0"
-            },
-            "glossy": {
-              "version": "0.1.7",
-              "from": "glossy@>=0.0.0 <1.0.0"
-            },
-            "unix-dgram": {
-              "version": "0.1.2",
-              "from": "unix-dgram@>=0.1.1 <0.2.0",
-              "dependencies": {
-                "bindings": {
-                  "version": "1.1.1",
-                  "from": "bindings@>=1.1.1 <1.2.0"
-                },
-                "nan": {
-                  "version": "1.7.0",
-                  "from": "nan@>=1.7.0 <1.8.0"
-                }
-              }
             }
           }
         }

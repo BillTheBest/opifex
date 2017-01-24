@@ -28,9 +28,7 @@ opifex 'amqp://user:password@host:port/domain/source', 'amqp://user:password@hos
 	"domain": "",
 	"source": {
 		"exchange": "configured source exchange",
-
 		"key": "configured binding pattern",
-		o = (args...) ->¬
 		"queue": "configured source queue"
 	},
 	"sink": {

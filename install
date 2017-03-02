@@ -1,0 +1,9 @@
+#!/bin/bash
+cd /${MODULE}
+npm_config_strict_ssl=false npm_config_always_auth=true npm_config_registry=${REGISTRY} npm login <<EOF
+${USERNAME}
+${PASSWORD}
+${EMAIL}
+EOF
+npm_config_strict_ssl=false npm_config_always_auth=true npm_config_registry=${REGISTRY} npm install -g ${MODULE}
+npm_config_strict_ssl=false npm_config_always_auth=true npm_config_registry=${REGISTRY} npm install -g supervisor

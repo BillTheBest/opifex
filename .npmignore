@@ -1,0 +1,5 @@
+/lib/*.coffee
+/test/
+/dist/
+install
+Dockerfile

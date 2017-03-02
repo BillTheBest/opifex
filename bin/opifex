@@ -1,10 +1,22 @@
-#!/usr/bin/env coffee
-#
+#!/usr/bin/env node
+(function() {
+  var Opifex, args, module, ref, sink, source,
+    slice = [].slice;
 
-Opifex = require 'opifex'
-[ source, sink, module, args... ] = process.argv[2...]
-module ||= process.env['MODULE']
-source ||= process.env['SOURCE_URI'] || process.env['SOURCE']
-sink ||= process.env['DEST_URI'] || process.env['SINK']
-args = process.env['ARGS'].split(///\s+///) if not args.length and process.env['ARGS']
-Opifex.apply(Opifex,[ source, sink, module, args ])
+  Opifex = require('../lib/opifex');
+
+  ref = process.argv.slice(2), source = ref[0], sink = ref[1], module = ref[2], args = 4 <= ref.length ? slice.call(ref, 3) : [];
+
+  module || (module = process.env['MODULE']);
+
+  source || (source = process.env['SOURCE_URI'] || process.env['SOURCE']);
+
+  sink || (sink = process.env['DEST_URI'] || process.env['SINK']);
+
+  if (!args.length && process.env['ARGS']) {
+    args = process.env['ARGS'].split(/\s+/);
+  }
+
+  Opifex.apply(Opifex, [source, sink, module, args]);
+
+}).call(this);
